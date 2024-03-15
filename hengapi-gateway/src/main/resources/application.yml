@@ -1,0 +1,19 @@
+server:
+  port: 8090
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: hengapi_rout
+          uri: lb://hengapi-backend
+          predicates:
+            - Path=/api/**
+dubbo:
+  application:
+    name: backend
+  protocol:
+    name: dubbo
+    port: 22223
+  registry:
+    id: nacos-registry
+    address: nacos://localhost:8848
