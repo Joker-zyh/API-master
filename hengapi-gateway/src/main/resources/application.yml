@@ -1,13 +1,20 @@
 server:
   port: 8090
 spring:
+  application:
+    name: hengapi-gateway
   cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
     gateway:
       routes:
-        - id: hengapi_rout
+        - id: api_backend_route
           uri: lb://hengapi-backend
           predicates:
             - Path=/api/**
+  main:
+    web-application-type: reactive
 dubbo:
   application:
     name: backend
@@ -17,3 +24,13 @@ dubbo:
   registry:
     id: nacos-registry
     address: nacos://localhost:8848
+
+logging:
+  level:
+    org:
+      springframework:
+        cloud:
+          gateway:
+            trace
+
+

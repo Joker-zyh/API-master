@@ -13,6 +13,7 @@ import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
+@Component
 @Slf4j
 public class LoginGlobalFilter implements GlobalFilter, Ordered {
     @Resource
@@ -75,7 +77,7 @@ public class LoginGlobalFilter implements GlobalFilter, Ordered {
                 isTokenValid = JwtUtils.checkToken(keyAndVal[1]);
             }
         }
-        if (isTokenValid){
+        if (!isTokenValid){
             log.error("未登录");
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }

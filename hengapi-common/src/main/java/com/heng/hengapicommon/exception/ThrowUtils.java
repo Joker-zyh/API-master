@@ -1,7 +1,7 @@
 package com.heng.hengapicommon.exception;
 
 
-import com.czq.apicommon.common.ErrorCode;
+import com.heng.hengapicommon.common.ErrorCode;
 
 /**
  * 抛异常工具类

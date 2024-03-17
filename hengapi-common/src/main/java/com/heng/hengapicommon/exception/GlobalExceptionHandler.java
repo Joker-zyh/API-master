@@ -2,9 +2,10 @@ package com.heng.hengapicommon.exception;
 
 
 
-import com.czq.apicommon.common.BaseResponse;
-import com.czq.apicommon.common.ErrorCode;
-import com.czq.apicommon.common.ResultUtils;
+
+import com.heng.hengapicommon.common.BaseResponse;
+import com.heng.hengapicommon.common.ErrorCode;
+import com.heng.hengapicommon.common.ResultUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
