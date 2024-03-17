@@ -4,9 +4,7 @@ import cn.hutool.json.JSONUtil;
 import com.heng.hengapicommon.model.entity.InterfaceInfo;
 import com.heng.hengapicommon.model.entity.User;
 import com.heng.hengapicommon.model.entity.UserInterfaceInfo;
-import com.heng.hengapicommon.service.InnerInterfaceInfoService;
-import com.heng.hengapicommon.service.InnerUserInterfaceInfoService;
-import com.heng.hengapicommon.service.InnerUserService;
+import com.heng.hengapicommon.service.ApiBcakendService;
 import com.hengapi.hengapiclientsdk.utils.SignUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -34,14 +32,7 @@ import java.util.*;
 @Component
 public class InterfaceInvokeFilter implements GatewayFilter, Ordered {
     @DubboReference
-    private InnerUserService innerUserService;
-
-    @DubboReference
-    private InnerInterfaceInfoService innerInterfaceInfoService;
-
-    @DubboReference
-    private InnerUserInterfaceInfoService innerUserInterfaceInfoService;
-
+    private ApiBcakendService apiBcakendService;
 
     private static final String IP_HOST = "http://localhost:8123";
 
@@ -82,7 +73,7 @@ public class InterfaceInvokeFilter implements GatewayFilter, Ordered {
 
         User invokeUser = null;
         try {
-            invokeUser = innerUserService.getInvokeUser(accessKey);
+            invokeUser = apiBcakendService.getInvokeUser(accessKey);
         }catch (Exception e){
             log.error("getInvokeUser error");
         }
@@ -114,7 +105,7 @@ public class InterfaceInvokeFilter implements GatewayFilter, Ordered {
         //从数据库中查询接口是否存在（接口路径，请求方等是否匹配）
         InterfaceInfo interfaceInfo = null;
         try{
-            interfaceInfo = innerInterfaceInfoService.getInterfaceInfo(IP_HOST + url,method);
+            interfaceInfo = apiBcakendService.getInterfaceInfo(IP_HOST + url,method);
         }catch (Exception e){
             log.error("远程调用获取接口信息失败。");
         }
@@ -130,7 +121,7 @@ public class InterfaceInvokeFilter implements GatewayFilter, Ordered {
         //获取用户接口信息
         UserInterfaceInfo userInterfaceInfoById = null;
         try{
-            userInterfaceInfoById = innerUserInterfaceInfoService.getUserInterfaceInfoById(
+            userInterfaceInfoById = apiBcakendService.getUserInterfaceInfoById(
                     invokeUser.getId(), interfaceInfo.getId());
         }catch (Exception e){
             log.error("远程调用获取用户接口信息失败。");
@@ -183,7 +174,7 @@ public class InterfaceInvokeFilter implements GatewayFilter, Ordered {
 
                             //8.调用成功，调用次数+1
                             try{
-                                innerUserInterfaceInfoService.invokeCount(interfaceId,userId);
+                                apiBcakendService.invokeCount(interfaceId,userId);
                             }catch (Exception e){
                                 log.error("invokeCount error");
                             }

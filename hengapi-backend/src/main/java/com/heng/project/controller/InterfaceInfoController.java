@@ -3,8 +3,11 @@ package com.heng.project.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.gson.Gson;
+import com.heng.hengapicommon.common.JwtUtils;
+import com.heng.hengapicommon.model.entity.InterfaceCharging;
 import com.heng.hengapicommon.model.entity.InterfaceInfo;
 import com.heng.hengapicommon.model.entity.User;
+import com.heng.hengapicommon.model.entity.UserInterfaceInfo;
 import com.heng.project.annotation.AuthCheck;
 import com.heng.project.common.*;
 import com.heng.project.constant.CommonConstant;
@@ -14,7 +17,10 @@ import com.heng.project.model.dto.interfaceinfo.InterfaceInfoInvokeRequest;
 import com.heng.project.model.dto.interfaceinfo.InterfaceInfoQueryRequest;
 import com.heng.project.model.dto.interfaceinfo.InterfaceInfoUpdateRequest;
 import com.heng.project.model.enums.InterfaceInfoStatusEnum;
+import com.heng.project.model.vo.InterfaceInfoVO;
+import com.heng.project.service.InterfaceChargingService;
 import com.heng.project.service.InterfaceInfoService;
+import com.heng.project.service.UserInterfaceInfoService;
 import com.heng.project.service.UserService;
 import com.hengapi.hengapiclientsdk.client.HengApiClient;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +50,13 @@ public class InterfaceInfoController {
 
     @Resource
     private HengApiClient hengApiClient;
+
+    @Resource
+    private InterfaceChargingService interfaceChargingService;
+
+    @Resource
+    private UserInterfaceInfoService userInterfaceInfoService;
+
     // region 增删改查
 
     /**
@@ -139,12 +152,39 @@ public class InterfaceInfoController {
      * @return
      */
     @GetMapping("/get")
-    public BaseResponse<InterfaceInfo> getInterfaceInfoById(long id) {
+    public BaseResponse<InterfaceInfoVO> getInterfaceInfoById(long id, HttpServletRequest request) {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+        Long userIdByToken = JwtUtils.getUserIdByToken(request);
+        if (userIdByToken == null){
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        // 获取接口信息和接口费用信息，并整合返回
         InterfaceInfo interfaceInfo = interfaceInfoService.getById(id);
-        return ResultUtils.success(interfaceInfo);
+        InterfaceInfoVO interfaceInfoVO = new InterfaceInfoVO();
+        BeanUtils.copyProperties(interfaceInfo,interfaceInfoVO);
+
+        //接口单价详情
+        QueryWrapper<InterfaceCharging> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("interfaceId",id);
+        InterfaceCharging interfaceCharging = interfaceChargingService.getOne(queryWrapper);
+        if (interfaceCharging != null){
+            interfaceInfoVO.setCharging(interfaceCharging.getCharging());
+            //interfaceInfoVO.setAvailablePieces(interfaceCharging.getAvailablePieces());
+            interfaceInfoVO.setChargingId(interfaceCharging.getId());
+        }
+
+        //用户剩余接口调用次数
+        QueryWrapper<UserInterfaceInfo> queryWrapper1 = new QueryWrapper<>();
+        queryWrapper1.eq("userId",userIdByToken);
+        queryWrapper1.eq("interfaceInfoId", id);
+        UserInterfaceInfo userInterfaceInfo = userInterfaceInfoService.getOne(queryWrapper1);
+        if (userInterfaceInfo != null){
+            interfaceInfoVO.setAvailablePieces(userInterfaceInfo.getLeftNum().toString());
+        }
+
+        return ResultUtils.success(interfaceInfoVO);
     }
 
     /**
@@ -220,7 +260,7 @@ public class InterfaceInfoController {
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
-        //判断接口是否可用
+        //判断接口是否可用 todo 修改为根据sdk调用
         com.hengapi.hengapiclientsdk.model.User user = new com.hengapi.hengapiclientsdk.model.User();
         User loginUser = userService.getLoginUser(request);
         user.setUserName(loginUser.getUserName());
@@ -278,7 +318,7 @@ public class InterfaceInfoController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         long id = interfaceInfoInvokeRequest.getId();
-        // 判断是否存在
+        //1.判断接口是否存在
         InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
@@ -291,6 +331,9 @@ public class InterfaceInfoController {
         String accessKey = loginUser.getAccessKey();
         String secretKey = loginUser.getSecretKey();
 
+        //2. todo 用户调用次数校验
+
+        //3.发起接口调用 todo 修改为根据sdk调用
         HengApiClient hengApiClient = new HengApiClient(accessKey,secretKey);
         Gson gson = new Gson();
         String requestParams = interfaceInfoInvokeRequest.getUserRequestParams();
