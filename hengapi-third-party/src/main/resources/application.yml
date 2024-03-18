@@ -1,0 +1,56 @@
+server:
+  port: 9000
+  servlet:
+    context-path: /api/third
+
+spring:
+  application:
+    name: hengapi-third-party
+    cloud:
+      nacos:
+        discovery:
+          server-addr: 127.0.0.1:8848
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/#
+    username: #
+    password: #
+  redis:
+    database: 1
+    host: localhost
+    port: 6379
+    timeout: 5000
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: #
+    password: #
+    virtualHost: /
+    listener:
+      simple:
+        concurrency: 1
+        max-concurrency: 3
+        # 消费者预取1条数据到内存，默认为250条
+        prefetch: 1
+        # 确定机制
+        acknowledge-mode: manual
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+#阿里云支付
+# application-dev.yml
+# 支付宝支付 - 沙箱 https://opendocs.alipay.com/common/02kkv7
+alipay:
+  enabled: true
+  app_id: 9021000135637869
+  privateKey: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCoZFNsqpN4c5A3y+mkBujqrqnLwKLqwA9MYxmbCfW2Dl380/kII86bIMKe9SHkCyQfNOmrksq6pHF+/ffDfso5iKwnXADqvn/sA/cj3SMunlDIuGa7AJ1ATfRZovSSOxttPZOeA84JFp3tufN5UfvvFDAId3ZYeeFdwKN6UkENxjL9LHMwbgn6tIFL/Zjowd8UZwvOoTN4FJkEcwZa+QdMsxq5oi0w0FFZNlnucHJimdIXUC4kX2km8dwcieX5nNh9FMr6A9jpHJW8octzfBaRw438fKxjQm5RRgeU72KWgTa5kMfZW9J4clCaAIEdXgOXEWM9nnXIbxtyR01c5wMrAgMBAAECggEAC7oQ5Txr0LObk4cr2jRw/Ab15C6iKd7+Mb+lBNsItYkCmpzYduyncr4xT4iat5rfBR1WOJCcdasGDGX7Xy3xP1h5RLRvi+mAVxtflqvLy29TCOduoA9G5DeJkMR8a8KaAl2LbjGto4xjqy6L+iLvfJLXVX+cSkUSoMjNmbMovKC38/mlKmQ2OIemV2bM80jGWO9Z2xqDsf2ZcJzXqgeTncXOwnn2IpzOPymsJcqtSz5eBoLZpA/zNd07EaqgUB2z1pslaCdk+Bq0oaJ3DXbIqWZ8kRNSrBBoqq4/ZfUBFhSHCF7fbRir5PfArpH/4t6bAs+POW4xmKginMw5/f1PIQKBgQDXjcd/PxdGXoSLmveVUrAzKz7tkK9pCTQLXx/oM14K1Nl25KjBHVZjEtdoF2MQmAivcK5QzW2wmF60Mt95rQpHn+AW+Ma8+NfbvA7M/G925OsHPzCjVbm+1ha/xnchUUwd0Z2eLtf4njJ09Jt188FeCwSVx24Buc8vlyBIvX1uJwKBgQDH/RpmXdqn+L64C2Dcp3kDF7qyL1cL61OvLSle1cFCnlxqJ4ABse/l+aSJUPK74MxL4n0PbxYb2UN0QjHUBq6dL9Q5w/E1/jKDA4qnamHDVrzRs6fQjCCKEDlConjB4fKfeXSh7V7GdxmfnEULyXGwA0SOIqVm4lPnF5JVC5hpXQKBgE4K1yALB7JCplqlUN6PgZwFHFOG/vtYia9UUYkQkAv75IBXaYIBzTUxrSvSy9tGMF7UvUgkGILHqAI2KRM0w3QLPmcSy2G/9udnvzQYcYLqfu2wwztf3lBp0vK8OIWnmZdyPU74RtmM7VfK+D5McsZJ1u8jtYCKdakVXmr3sGIhAoGBAKnzB9VIGsG1m/VxDe5Vj3u2VZyIqFNjtyjdmxORWPuQ8f3v9VL7cF+h51Yd6TkJzvMJ1Lch8srVtgH9IrUIvKitdY9lWP1GOIynnNOqjsveUPVv08Ng4WISaWacBTzWE0W8hAX7XxgPLEI8HVzn4mnuTPrwrFijKyPuHxeQlAOtAoGAcNDZkwZNgi/P1VywY1Hv2haUR9MZG++4QSJnUSyyWw8UzWvwsXYs7uwbXla+Qch2dGx3wVOtNkPl134zQ2JHWCnGXW11maoGtCPrAsI/X6a/fXSUsah4b0tO/ICPWflPPosjogHQZA4G/TSx9z2elUD8YMw2OnsQJ6vLhGncfjw=
+  publicKey: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAg/E7uEU8s2/i3qVdi9ERTjTFi2cMBfMvAoqFKN1e2aPFajm9Ta09JKnI0//SVKN02xn91v57Fj3tIE8PALSZX2wkzqlrvtL65dkkO+o9I/dmUKAz1Nx4T6AC/hY4HgHBK7u2rxaxY7Myph0+7CwxVTpdzn8JwBas2mbfeDJMwpcgGSd7q9de+HuN6UXS3v4ciiPEhL0XSiNC7QH5OuA4vsF0SKV1jnVinycs/iYHkITI2LWopYL6JRplcl/Q3vrkrH8Fo86SJKDsbkgS2rNqk4zCzftzcNLqgqNdTlU9LmRtH9BAM8oOAlkF5G6y7/uewjyDvcsefTdumr0L9wt84wIDAQAB
+  notifyUrl: http://qwv23t.natappfree.cc:9000/api/third/alipay/notify
+  returnUrl: https://baidu.com
+  gatewayUrl: https://openapi-sandbox.dl.alipaydev.com/gateway.do
+  signType: RSA2
+  charset: utf-8
+
