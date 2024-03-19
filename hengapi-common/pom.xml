@@ -24,6 +24,7 @@
     </properties>
 
     <dependencies>
+
         <!-- JWT-->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

@@ -3,6 +3,7 @@ package com.heng.hengapiorder.service.impl;
 import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -21,7 +22,10 @@ import com.heng.hengapiorder.dto.OrderQueryRequest;
 import com.heng.hengapiorder.mapper.OrderMapper;
 import com.heng.hengapiorder.service.OrderService;
 import com.heng.hengapicommon.model.entity.Order;
+import com.heng.hengapiorder.utils.OrderMqUtils;
 import org.apache.commons.lang3.RandomUtils;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -33,6 +37,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+
+import static com.heng.hengapiorder.config.RabbitMqConfig.*;
 
 /**
 * @author 86191
@@ -51,6 +57,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
 
     @Resource
     private ApiBcakendService apiBcakendService;
+
+    @Resource
+    private OrderMqUtils orderMqUtils;
 
     /**
      * 添加订单
@@ -125,7 +134,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         BeanUtils.copyProperties(orderAddRequest, order);
         this.save(order);
 
-        //todo 4.消息队列发送延迟消息
+        //4.消息队列发送延迟消息
+        orderMqUtils.sendOrderSnInfo(order);
 
         //5.构造订单详情，并回显
 

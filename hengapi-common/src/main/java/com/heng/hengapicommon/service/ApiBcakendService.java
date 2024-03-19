@@ -61,4 +61,23 @@ public interface ApiBcakendService {
      * @return
      */
     boolean updateInterfaceStock(Long interfaceId, int count);
+
+    /**
+     * 恢复系统接口剩余调用次数
+     * @param interfaceId
+     * @param count
+     * @return
+     */
+    boolean recoverInterfaceStock(Long interfaceId, int count);
+
+    /**
+     * 给用户分配接口
+     * @param userId
+     * @param interfaceId
+     * @param count
+     * @return
+     */
+    boolean updateUserInterfaceInvokeCount(Long userId, Long interfaceId, Integer count);
+
+
 }

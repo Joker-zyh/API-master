@@ -27,6 +27,12 @@ public class AliPayRabbitMqConfig {
      */
     @Bean
     public Queue aliPayQueue(){
+        /**
+         * name: 队列名称
+         * durable 是否持久化
+         * exclusive 是否是排他队列 只有创建者可以使用
+         * autoDelete 声明此队列为临时队列，最后一个消费者使用完自动删除
+         */
         return new Queue(ORDER_SUCCESS_QUEUE_NAME, true,false,false,null);
     }
 

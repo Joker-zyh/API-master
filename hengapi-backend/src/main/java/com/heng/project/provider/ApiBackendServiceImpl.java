@@ -113,4 +113,36 @@ public class ApiBackendServiceImpl implements ApiBcakendService {
 
 
     }
+
+    /**
+     * 恢复系统接口剩余调用次数
+     *
+     * @param interfaceId
+     * @param count
+     * @return
+     */
+    @Override
+    public boolean recoverInterfaceStock(Long interfaceId, int count) {
+        UpdateWrapper<InterfaceCharging> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.setSql("availablePieces = availablePieces +" + count)
+                .eq("interfaceId", interfaceId);
+        return interfaceChargingService.update(updateWrapper);
+    }
+
+    /**
+     * 给用户分配接口
+     *
+     * @param userId
+     * @param interfaceId
+     * @param count
+     * @return
+     */
+    @Override
+    public boolean updateUserInterfaceInvokeCount(Long userId, Long interfaceId, Integer count) {
+        UpdateWrapper<UserInterfaceInfo> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.set("leftNum", count)
+                .eq("userId", userId)
+                .eq("interfaceId", interfaceId);
+        return userInterfaceInfoService.update(updateWrapper);
+    }
 }

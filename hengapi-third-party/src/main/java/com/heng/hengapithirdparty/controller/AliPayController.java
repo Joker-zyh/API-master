@@ -17,6 +17,8 @@ import com.heng.hengapithirdparty.model.dto.AlipayRequest;
 import com.heng.hengapithirdparty.model.entity.AlipayInfo;
 import com.heng.hengapithirdparty.service.AlipayInfoService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,10 +30,12 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static com.heng.hengapicommon.constant.RedisConstant.ALIPAY_TRADE_SUCCESS_RECORD;
-import static com.heng.hengapicommon.constant.RedisConstant.EXIST_KEY_VALUE;
+import static com.heng.hengapicommon.constant.RabbitmqConstant.ORDER_EXCHANGE_NAME;
+import static com.heng.hengapicommon.constant.RabbitmqConstant.ORDER_SUCCESS_EXCHANGE_ROUTING_KEY;
+import static com.heng.hengapicommon.constant.RedisConstant.*;
 
 @Slf4j
 @RestController
@@ -46,6 +50,9 @@ public class AliPayController {
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private RabbitTemplate rabbitTemplate;
 
 
     @PostMapping("/payCode")
@@ -107,16 +114,30 @@ public class AliPayController {
                     AlipayInfo alipayInfo = new AlipayInfo();
                     alipayInfo.setSubject(params.get("subject"));
                     alipayInfo.setTradeStatus(params.get("trade_status"));
-                    alipayInfo.setTradeNo(params.get("trade_no"));
+                    alipayInfo.setTradeNo(params.get("tradeNo"));
                     alipayInfo.setOrderNumber(params.get("out_trade_no"));
                     alipayInfo.setTotalAmount(Double.valueOf(params.get("total_amount")));
                     alipayInfo.setBuyerId(params.get("buyer_id"));
                     alipayInfo.setGmtPayment(DateUtil.parse(params.get("gmt_payment")));
                     alipayInfo.setBuyerPayAmount(Double.valueOf(params.get("buyer_pay_amount")));
                     alipayInfoService.save(alipayInfo);
+
                     //记录处理成功的订单，实现订单幂等性
                     stringRedisTemplate.opsForValue().set(ALIPAY_TRADE_SUCCESS_RECORD +alipayInfo.getOrderNumber(),EXIST_KEY_VALUE,30, TimeUnit.MINUTES);
-                    //todo 修改数据库，完成整个订单功能
+
+                    //给支付成功消息队列发送消息，修改数据库，完成整个订单功能
+                    String tradeNo = params.get("out_trade_no");
+
+                    //实现我方订单的幂等性
+                    stringRedisTemplate.opsForValue().set(SEND_ORDER_PAY_SUCCESS_INFO + tradeNo,tradeNo);
+
+                    rabbitTemplate.convertAndSend(ORDER_EXCHANGE_NAME,ORDER_SUCCESS_EXCHANGE_ROUTING_KEY,tradeNo,message -> {
+                        MessageProperties messageProperties = message.getMessageProperties();
+                        messageProperties.setMessageId(UUID.randomUUID().toString());
+                        messageProperties.setContentEncoding("utf-8");
+                        return message;
+                    });
+                    log.info("消息队列成功给订单服务发送支付成功消息，订单号为：" + tradeNo);
                     //orderPaySuccessMqUtils.sendOrderPaySuccess(params.get("out_trade_no"));
                 }
             }
