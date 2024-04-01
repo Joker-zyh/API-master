@@ -35,6 +35,10 @@ public class AnalysisController {
     @Resource
     private InterfaceInfoService interfaceInfoService;
 
+    /**
+     * 调用次数最多的三个接口
+     * @return
+     */
     @GetMapping("/top/interface/invoke")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<List<InterfaceInfoVO>> listInvokeInterfaceInfo(){

@@ -5,6 +5,7 @@ import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -19,6 +20,7 @@ import com.heng.hengapicommon.model.vo.OrderVO;
 import com.heng.hengapicommon.service.ApiBcakendService;
 import com.heng.hengapiorder.dto.OrderAddRequest;
 import com.heng.hengapiorder.dto.OrderQueryRequest;
+import com.heng.hengapiorder.enums.OrderStatusEnum;
 import com.heng.hengapiorder.mapper.OrderMapper;
 import com.heng.hengapiorder.service.OrderService;
 import com.heng.hengapicommon.model.entity.Order;
@@ -37,6 +39,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.heng.hengapiorder.config.RabbitMqConfig.*;
 
@@ -53,14 +56,18 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
     private StringRedisTemplate stringRedisTemplate;
 
     @Resource
+    private OrderMapper orderMapper;
+
+    @Resource
     private Gson gson;
 
     @Resource
-    private ApiBcakendService apiBcakendService;
+    private ApiBcakendService apiBackendService;
 
     @Resource
     private OrderMqUtils orderMqUtils;
 
+    public static final String USER_LOGIN_STATE = "user:login:";
     /**
      * 添加订单
      *
@@ -102,7 +109,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         }
 
         //校验接口
-        InterfaceInfo interfaceInfo = apiBcakendService.getInterfaceById(interfaceId);
+        InterfaceInfo interfaceInfo = apiBackendService.getInterfaceById(interfaceId);
         if (interfaceInfo == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"接口不存在");
         }
@@ -116,13 +123,13 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
         }
 
         //校验系统接口调用次数
-        int interfaceStock = apiBcakendService.getInterfaceStockById(interfaceId);
+        int interfaceStock = apiBackendService.getInterfaceStockById(interfaceId);
         if (interfaceStock <= 0 || interfaceStock - count <= 0){
             throw new BusinessException(ErrorCode.SYSTEM_ERROR,"系统接口剩余调用次数不足");
         }
 
         //2.扣除系统调用次数
-        boolean updateInterfaceStockResult = apiBcakendService.updateInterfaceStock(interfaceId, count);
+        boolean updateInterfaceStockResult = apiBackendService.updateInterfaceStock(interfaceId, count);
         if (!updateInterfaceStockResult){
             throw new BusinessException(ErrorCode.SYSTEM_ERROR,"扣减库存失败");
         }
@@ -174,7 +181,39 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
      */
     @Override
     public Page<OrderVO> listPageOrder(OrderQueryRequest orderQueryRequest, HttpServletRequest request) {
-        return null;
+        Integer type = Integer.parseInt(orderQueryRequest.getType());
+        long current = orderQueryRequest.getCurrent();
+        long pageSize = orderQueryRequest.getPageSize();
+        if (!OrderStatusEnum.getValues().contains(type)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+
+        User userVO = getLoginUser(request);
+        QueryWrapper<Order> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("userId",userVO.getId()).eq("status",type);
+        Page<Order> page = new Page<>(current,pageSize);
+        Page<Order> orderPage = this.page(page, queryWrapper);
+
+        Page<OrderVO> orderVOPage = new Page<>(orderPage.getCurrent(),orderPage.getSize(),orderPage.getTotal());
+
+        List<OrderVO> orderVOList = orderPage.getRecords().stream().map(order -> {
+            Long interfaceId = order.getInterfaceId();
+            InterfaceInfo interfaceInfo = apiBackendService.getInterfaceById(interfaceId);
+            OrderVO orderVO = new OrderVO();
+            BeanUtils.copyProperties(order, orderVO);
+            orderVO.setTotal(Long.valueOf(order.getCount()));
+            orderVO.setTotalAmount(order.getTotalAmount());
+            orderVO.setOrderNumber(order.getOrderSn());
+
+            orderVO.setInterfaceName(interfaceInfo.getName());
+            orderVO.setInterfaceDesc(interfaceInfo.getDescription());
+            orderVO.setExpirationTime(DateUtil.offset(order.getCreate_time(), DateField.MINUTE, 30));
+            return orderVO;
+        }).collect(Collectors.toList());
+        orderVOPage.setRecords(orderVOList);
+        return orderVOPage;
+
     }
 
     /**
@@ -185,7 +224,28 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order>
      */
     @Override
     public List<Order> listTopBuyInterfaceInfo(int limit) {
-        return null;
+        return orderMapper.listTopBuyInterfaceInfo(limit);
+    }
+
+    /**
+     * 获取登录用户
+     * @param request
+     * @return
+     */
+    public User getLoginUser(HttpServletRequest request) {
+        // 先判断是否已登录
+        Long userId = JwtUtils.getUserIdByToken(request);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+
+        String userJson = stringRedisTemplate.opsForValue().get(USER_LOGIN_STATE + userId);
+        User user = gson.fromJson(userJson, User.class);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+
+        return user;
     }
 }
 

@@ -13,6 +13,7 @@ public interface RedisConstant {
     String ALIPAY_TRADE_SUCCESS_RECORD = "alipay:trade:success:record:";
 
     //短信登录key
-    public static String LOGINCODEPRE = "user::email::register::";
+    public static String LOGINCODEPRE = "user::email::login::";
+    public static String REGISTERCODEPRE = "user::email::register::";
 
 }

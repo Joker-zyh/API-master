@@ -3,6 +3,8 @@ package com.heng.hengapiorder.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.heng.hengapicommon.model.entity.Order;
 
+import java.util.List;
+
 
 /**
 * @author 86191
@@ -11,7 +13,12 @@ import com.heng.hengapicommon.model.entity.Order;
 * @Entity generator.domain.Order
 */
 public interface OrderMapper extends BaseMapper<Order> {
-
+    /**
+     * 获取前 limit 购买数量的接口
+     * @param limit
+     * @return
+     */
+    List<Order> listTopBuyInterfaceInfo(int limit);
 }
 
 
