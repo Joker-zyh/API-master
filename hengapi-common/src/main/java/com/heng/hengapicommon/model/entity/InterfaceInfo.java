@@ -7,14 +7,14 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 接口信息
+ * 
  * @TableName interface_info
  */
 @TableName(value ="interface_info")
 @Data
 public class InterfaceInfo implements Serializable {
     /**
-     * 主键
+     * 
      */
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -55,30 +55,40 @@ public class InterfaceInfo implements Serializable {
     private String responseHeader;
 
     /**
-     * 接口状态 (0-关闭，1-开启)
+     * 接口状态 0 关闭，1启用
      */
-    private Integer status;
+    private Byte status;
 
     /**
-     * 创建人
+     * 接口对应的sdk
      */
-    private Long userId;
+    private String sdk;
 
     /**
-     * 创建时间
+     * 请求参数示例
      */
-    private Date create_time;
+    private String parameterExample;
 
     /**
-     * 更新时间
-     */
-    private Date update_time;
-
-    /**
-     * 是否删除(0-未删, 1-已删)
+     * 逻辑删除 0 删除，1正常
      */
     @TableLogic
-    private Integer is_deleted;
+    private Integer isDelete;
+
+    /**
+     * 
+     */
+    private Date createTime;
+
+    /**
+     * 
+     */
+    private Date updateTime;
+
+    /**
+     * 
+     */
+    private Long userId;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
